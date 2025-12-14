@@ -267,7 +267,7 @@ def main():
             st.warning("⚠️ Please upload 'image_c07dfb.png' to the folder.")
             
         menu = st.radio("Navigate", ["Student Hub", "Admin Dashboard"])
-        st.info("Developed with Google Gemini AI")
+        st.info("Developed by Environment Cleaner")
 
     # --- Main Page Banner (Also using the image) ---
     try:
@@ -292,4 +292,5 @@ def main():
         admin_dashboard()
 
 if __name__ == "__main__":
+
     main()
