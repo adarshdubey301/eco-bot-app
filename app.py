@@ -14,7 +14,7 @@ st.set_page_config(page_title="ClimateGuardian AI", page_icon="🌿", layout="wi
 
 # Configure the API key
 # Note: In production, store this in secrets.toml
-genai.configure(api_key="AIzaSyBNPSbfuCyv0nYLjt9yn29i89CCNoHTjW8")
+genai.configure()
 
 # --- CUSTOM CSS FOR ECO THEME ---
 st.markdown("""
@@ -293,5 +293,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
