@@ -1,5 +1,8 @@
 streamlit
 pandas
 plotly
+opencv-python-headless
+mediapipe
+openai
+numpy
 google-generativeai
-Pillow
