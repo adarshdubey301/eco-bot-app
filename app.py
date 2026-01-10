@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import datetime
 import time
-import google.generativeai as genai
+from openai import OpenAI
 from PIL import Image
 import os
 
@@ -14,7 +14,10 @@ st.set_page_config(page_title="ClimateGuardian AI", page_icon="🌿", layout="wi
 
 # Configure the API key
 # Note: In production, store this in secrets.toml
-genai.configure(api_key="ZjiD56uj_l6xA6hZRVoCdVe4xrCIoyzrnx0S7Q2aQTZYJwM4AzEf6eu8qn1APEfNyN3zZAa_S6T3BlbkFJty9x5ziQaV2tREDecvdNy7slgr30O6fXpZ3m6ghdAhwpkbrLBDJWu6dx3b5urb-6vZSPDvfc0A")
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="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", # <--- PASTE YOUR sk-or- KEY HERE
+)
 
 # --- CUSTOM CSS FOR ECO THEME ---
 st.markdown("""
@@ -90,37 +93,57 @@ if 'quiz_data' not in st.session_state:
 # ==========================================
 # 2. HELPER FUNCTIONS
 # ==========================================
-
-def get_gemini_model():
-    return genai.GenerativeModel('gemini-2.5-flash')
-
-def generate_ai_quiz_question():
-    """Generates a dynamic quiz question using Gemini"""
+def get_ai_response(prompt_text):
+    """Function to call OpenRouter (works with Gemini, Llama, etc.)"""
     try:
-        model = get_gemini_model()
-        prompt = """
-        Generate 1 multiple choice question about environmental sustainability, recycling, or climate change.
-        Strictly follow this format using the pipe symbol (|) as a separator:
-        Question Text | Option A | Option B | Option C | Option D | Correct Option (A/B/C/D) | Short Explanation
-        
-        Example:
-        What is the 3R rule? | Run, Read, Rest | Reduce, Reuse, Recycle | Rise, Ride, Race | Red, Redder, Reddest | B | The 3Rs help cut down on waste.
-        """
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        parts = text.split('|')
-        
-        if len(parts) >= 6:
-            return {
-                "q": parts[0].strip(),
-                "options": [parts[1].strip(), parts[2].strip(), parts[3].strip(), parts[4].strip()],
-                "ans": parts[5].strip().upper(), # Should be A, B, C, or D
-                "exp": parts[6].strip() if len(parts) > 6 else "Great job saving the planet!"
-            }
-        else:
-            return None
+        completion = client.chat.completions.create(
+            extra_headers={
+                "HTTP-Referer": "https://streamlit.io/", # Optional
+                "X-Title": "Student Eco Project",        # Optional
+            },
+            model="google/gemini-flash-1.5", # You can change this model!
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt_text
+                }
+            ]
+        )
+        return completion.choices[0].message.content
     except Exception as e:
+        print(f"Error calling AI: {e}")
         return None
+
+def generate_quiz_batch(level_desc, count=5):
+    """Generates a batch of questions using OpenRouter"""
+    try:
+        # We use the new client function instead of model.generate_content
+        prompt = f"""
+        Generate {count} distinct multiple-choice questions about environmental sustainability.
+        Difficulty Level: {level_desc}.
+        Strictly follow this format for EACH question, separated by a newline:
+        Question|OptionA|OptionB|OptionC|OptionD|CorrectLetter|Explanation
+        """
+        
+        response_text = get_ai_response(prompt) # <--- CALLING NEW FUNCTION
+        
+        if not response_text:
+            return []
+
+        raw_text = response_text.strip().split('\n')
+        questions = []
+        for line in raw_text:
+            parts = line.split('|')
+            if len(parts) >= 7: # Check for 7 parts to be safe
+                questions.append({
+                    "q": parts[0],
+                    "options": [parts[1], parts[2], parts[3], parts[4]],
+                    "ans": parts[5].strip().upper(),
+                    "exp": parts[6]
+                })
+        return questions
+    except Exception as e:
+        return []
 
 def log_action(action, points):
     new_data = pd.DataFrame({
@@ -293,6 +316,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
